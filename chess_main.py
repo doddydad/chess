@@ -52,6 +52,12 @@ def draw_pieces(screen, gs):
                             row*SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
 
+def make_move(move, gs):
+    """ makes move given input of the two most recent places the player clicked"""
+    gs.board[move[1][0]][move[1][1]] = gs.board[move[0][0]][move[0][1]]
+    gs.board[move[0][0]][move[0][1]] = "--"
+
+
 def main():
     """main loop for code, takes user input and changes the user side output"""
     screen = p.display.set_mode((WIDTH, HEIGHT))
@@ -60,10 +66,25 @@ def main():
     print(gs.board)
     load_images()
     running = True
+    player_clicks = []  # Places user has clicked
     while running:
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
+
+            # Getting input as regards moving pieces
+            elif e.type == p.MOUSEBUTTONDOWN:
+                location = p.mouse.get_pos()  # gets (x,y) of mouse
+                column = location[0]//SQ_SIZE
+                row = location[1]//SQ_SIZE
+                player_clicks.append((row, column))
+                if len(player_clicks) >= 2:
+                    make_move(player_clicks, gs)
+                    player_clicks = []
+                    
+
+
+
         clock.tick(MAX_FPS)
         p.display.flip()
         draw_gamestate(screen, gs)
