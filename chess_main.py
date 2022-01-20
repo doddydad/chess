@@ -24,10 +24,11 @@ def load_images(set="basic"):
                         + piece + ".png"), (SQ_SIZE, SQ_SIZE))
 
 
-def draw_gamestate(screen, gs):
+def draw_gamestate(screen, gs, move = []):
     """ draws everthing in modules so can switch out some stuff"""
     # Can later add parts to draw legal moves etc.
     draw_board(screen)  # Draws the squares
+    draw_highlight(screen, move)  # Highlights clicked square
     draw_pieces(screen, gs)  # draws the pieces
 
 
@@ -42,6 +43,13 @@ def draw_board(screen):
                                                      SQ_SIZE, SQ_SIZE))
 
 
+def draw_highlight(screen, move):
+    """Draws a square to highlight the selected square"""
+    if len(move) == 1:
+        p.draw.rect(screen, p.Color("green"),
+                    (move[0][1]*SQ_SIZE, move[0][0]*SQ_SIZE, SQ_SIZE, SQ_SIZE))
+
+
 def draw_pieces(screen, gs):
     """Draws the pieces, image choice handled in load_images"""
     for row in range(DIMENSION):
@@ -54,8 +62,13 @@ def draw_pieces(screen, gs):
 
 def make_move(move, gs):
     """ makes move given input of the two most recent places the player clicked"""
-    gs.board[move[1][0]][move[1][1]] = gs.board[move[0][0]][move[0][1]]
-    gs.board[move[0][0]][move[0][1]] = "--"
+    if gs.board[move[0][0]][move[0][1]] != "--" and gs.board[move[1][0]][move[1][1]] != gs.board[move[0][0]][move[0][1]]:
+        gs.move_log.append(((move[0], gs.board[move[0][0]][move[0][1]]),
+                            (move[1], gs.board[move[1][0]][move[1][1]])))
+        gs.board[move[1][0]][move[1][1]] = gs.board[move[0][0]][move[0][1]]
+        gs.board[move[0][0]][move[0][1]] = "--"
+        gs.white_to_move = not gs.white_to_move
+        
 
 
 def main():
@@ -87,7 +100,7 @@ def main():
 
         clock.tick(MAX_FPS)
         p.display.flip()
-        draw_gamestate(screen, gs)
+        draw_gamestate(screen, gs, player_clicks)
 
 
 if __name__ == "__main__":
