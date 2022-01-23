@@ -25,3 +25,11 @@ changes for later, change board storage to numpy array for speed
         self.board[move.end_row][move.end_column] = move.start_piece
         self.board[move.start_row][move.start_column] = "--"
         self.white_to_move = not self.white_to_move
+
+    def verify_move(self, move):
+        """ Will be long function to check if a move is legal"""
+        if move.start_piece[0] != "w" and self.white_to_move is True:
+            return False
+        elif move.start_piece[0] != "b" and self.white_to_move is False:
+            return False
+        return True
