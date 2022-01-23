@@ -4,7 +4,7 @@ Handles user input and displays the game state
 """
 
 import pygame as p
-import chess_engine
+import chess_engine, check_move
 p.init()
 
 WIDTH = HEIGHT = 512
@@ -60,17 +60,6 @@ def draw_pieces(screen, gs):
                             row*SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
 
-def make_move(move, gs):
-    """ makes move given input of the two most recent places the player clicked"""
-    if gs.board[move[0][0]][move[0][1]] != "--" and gs.board[move[1][0]][move[1][1]] != gs.board[move[0][0]][move[0][1]]:
-        gs.move_log.append(((move[0], gs.board[move[0][0]][move[0][1]]),
-                            (move[1], gs.board[move[1][0]][move[1][1]])))
-        gs.board[move[1][0]][move[1][1]] = gs.board[move[0][0]][move[0][1]]
-        gs.board[move[0][0]][move[0][1]] = "--"
-        gs.white_to_move = not gs.white_to_move
-        
-
-
 def main():
     """main loop for code, takes user input and changes the user side output"""
     screen = p.display.set_mode((WIDTH, HEIGHT))
@@ -92,7 +81,9 @@ def main():
                 row = location[1]//SQ_SIZE
                 player_clicks.append((row, column))
                 if len(player_clicks) >= 2:
-                    make_move(player_clicks, gs)
+                    move = check_move.Move(player_clicks, gs)
+                    gs.make_move(move)
+                    print(move.chess_notation())
                     player_clicks = []
                     
 
