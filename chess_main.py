@@ -3,9 +3,13 @@ Main driver file
 Handles user input and displays the game state
 """
 
+import logging
 import pygame as p
-import chess_engine, check_move
+import chess_engine
+import check_move
 p.init()
+
+logging.basicConfig(filename="chess.log", level=logging.DEBUG)
 
 WIDTH = HEIGHT = 512
 DIMENSION = 8
@@ -65,7 +69,7 @@ def main():
     screen = p.display.set_mode((WIDTH, HEIGHT))
     clock = p.time.Clock()
     gs = chess_engine.Game_State()
-    print(gs.board)
+    logging.debug(gs.board)
     load_images()
     running = True
     player_clicks = []  # Places user has clicked
@@ -82,8 +86,8 @@ def main():
                 player_clicks.append((row, column))
                 if len(player_clicks) >= 2:
                     move = check_move.Move(player_clicks, gs)
+                    logging.debug((move.chess_notation(), gs.verify_move(move)))
                     gs.make_move(move)
-                    print(move.chess_notation())
                     player_clicks = []
                     
 

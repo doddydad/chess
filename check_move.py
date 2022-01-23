@@ -12,8 +12,6 @@ class Move():
 
     # We'll call these a lot, let's make them less ugly
     def __init__(self, move, gs):
-        self.move = move
-        self.gs = gs
         self.start_row = move[0][0]
         self.start_column = move[0][1]
         self.end_row = move[1][0]
@@ -21,15 +19,14 @@ class Move():
         self.start_piece = gs.board[self.start_row][self.start_column]
         self.end_piece = gs.board[self.end_row][self.end_column]
 
-    def verify_move(self):
-        pass
-
     def chess_notation(self):
         """converts the move as python sees it to standard chess notation for log"""
         notation = ""
         if "P" not in self.start_piece:
             notation += self.start_piece[1]
-        notation += self.get_rank_file(self.start_row, self.start_column)
+        # Below line should only be used when there's ambiguity about what piece
+        # could have moved. That's hard to detect atm
+        # notation += self.get_rank_file(self.start_row, self.start_column)
         if self.end_piece != "--":
             notation += "x"
         notation += self.get_rank_file(self.end_row, self.end_column)
