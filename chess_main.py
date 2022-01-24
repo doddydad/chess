@@ -6,10 +6,11 @@ Handles user input and displays the game state
 import logging
 import pygame as p
 import chess_engine
-import check_move
+import move as m
 p.init()
 
 logging.basicConfig(filename="chess.log", level=logging.DEBUG)
+# logging.debug(thing) to get it in the file to look at later
 
 WIDTH = HEIGHT = 512
 DIMENSION = 8
@@ -69,7 +70,6 @@ def main():
     screen = p.display.set_mode((WIDTH, HEIGHT))
     clock = p.time.Clock()
     gs = chess_engine.Game_State()
-    logging.debug(gs.board)
     load_images()
     running = True
     player_clicks = []  # Places user has clicked
@@ -85,12 +85,14 @@ def main():
                 row = location[1]//SQ_SIZE
                 player_clicks.append((row, column))
                 if len(player_clicks) >= 2:
-                    move = check_move.Move(player_clicks, gs)
-                    logging.debug((move.chess_notation(), gs.verify_move(move)))
+                    move = m.Move(player_clicks, gs)
+                    logging.debug(move.chess_notation())
                     gs.make_move(move)
                     player_clicks = []
                     
-
+            elif e.type == p.KEYDOWN:
+                if e.key == p.K_z:
+                    gs.undo_move()
 
 
         clock.tick(MAX_FPS)
