@@ -5,8 +5,7 @@ Handles user input and displays the game state
 
 import logging
 import pygame as p
-import chess_engine
-import move as m
+import classes as c
 p.init()
 
 logging.basicConfig(filename="chess.log", level=logging.DEBUG)
@@ -69,7 +68,7 @@ def main():
     """main loop for code, takes user input and changes the user side output"""
     screen = p.display.set_mode((WIDTH, HEIGHT))
     clock = p.time.Clock()
-    gs = chess_engine.Game_State()
+    gs = c.Game_State()
     load_images()
     running = True
     player_clicks = []  # Places user has clicked
@@ -85,7 +84,7 @@ def main():
                 row = location[1]//SQ_SIZE
                 player_clicks.append((row, column))
                 if len(player_clicks) >= 2:
-                    move = m.Move(player_clicks, gs)
+                    move = c.Move(player_clicks, gs)
                     gs.make_move(move)
                     player_clicks = []
                     
