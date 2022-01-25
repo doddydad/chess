@@ -1,3 +1,8 @@
+""" Will stare all classes relevant to basic playing functionality
+ to import to the main section. More and more feel I need to make a
+piece object """
+
+
 class Game_State():
     """
 This class stores all information about the gamestate
@@ -15,12 +20,12 @@ changes for later, change board storage to numpy array for speed
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
-            ["--", "--", "--", "--", "--", "--", "--", "--"],
+            ["--", "--", "--", "bQ", "--", "--", "--", "--"],
             ["wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP"],
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]]
         self.white_to_move = True
-        
-        # Eventually should make this only one list and have them derive 
+
+        # Eventually should make this only one list and have them derive
         # player list from log
         self.move_log = []  # The computer reads this for going its logic
         self.player_move_log = []   # This is what the player gets shown
@@ -50,48 +55,73 @@ changes for later, change board storage to numpy array for speed
         for r in range(len(self.board)):
             for c in range(len(self.board[r])):
                 piece = self.board[r][c]
+
                 if (piece[0] == "b" and self.white_to_move is False) or (piece[0] == "w" and self.white_to_move is True):
                     if piece[1] == "P":
-                        possible_moves.append(self.get_pawn_moves(r, c, piece))
+                        for m in self.get_pawn_moves(r, c, piece):
+                            possible_moves.append(m)
                     elif piece[1] == "R":
-                        possible_moves.append(self.get_rook_moves(r, c, piece))
+                        for m in self.get_rook_moves(r, c, piece):
+                            possible_moves.append(m)
                     elif piece[1] == "N":
-                        possible_moves.append(self.get_knight_moves(r, c, piece))
+                        for m in self.get_knight_moves(r, c, piece):
+                            possible_moves.append(m)
                     elif piece[1] == "B":
-                        possible_moves.append(self.get_bishop_moves(r, c, piece))
+                        for m in self.get_bishop_moves(r, c, piece):
+                            possible_moves.append(m)
                     elif piece[1] == "Q":
-                        possible_moves.append(self.get_queen_moves(r, c, piece))
+                        for m in self.get_queen_moves(r, c, piece):
+                            possible_moves.append(m)
                     elif piece[1] == "K":
-                        possible_moves.append(self.get_king_moves(r, c, piece))
+                        for m in self.get_king_moves(r, c, piece):
+                            possible_moves.append(m)
+
+        return possible_moves
 
     def get_legal_moves(self):
         """ fromt he above list, filter out moves that would put you in check """
-        return self.get_all_moves
+        return self.get_all_moves()
     
     """ big set of moves here for piece specific logic"""
     def get_pawn_moves(self, r, c, piece):
-        pass
+        pawn_moves = []
+        if piece[0] == "w":
+            # Moving forwards
+            if self.board[r-1][c] == "--":
+                pawn_moves.append(Move([(r, c), (r-1, c)], self))
+                if self.board[r-2][c] == "--" and r == 6:
+                    pawn_moves.append(Move([(r, c), (r-2, c)], self))
+
+            # Captures
+            try:
+                if self.board[r-1][c-1][0] == "b":
+                    pawn_moves.append(Move([(r, c), (r-1, c-1)], self))
+                if self.board[r-1][c+1][0] == "b":
+                    pawn_moves.append(Move([(r, c), (r-1, c+1)], self))
+            except IndexError:
+                pass
+        
+        return pawn_moves
+                
 
     def get_rook_moves(self, r, c, piece):
-        pass
+        return []
 
     def get_knight_moves(self, r, c, piece):
-        pass
+        return []
 
     def get_bishop_moves(self, r, c, piece):
-        pass
+        return []
 
     def get_queen_moves(self, r, c, piece):
-        pass
+        return []
 
     def get_king_moves(self, r, c, piece):
-        pass
-
+        return []
 
 
 class Move():
-    """All things involving moving a piece, realised it will have bunch of
-    methods"""
+    """The properties of a move, so position in various expressions"""
 
     # These are just gunna be used moving things in and out fo chess notation
     ranks_to_rows = {"1": 7, "2": 6, "3": 5, "4": 4,
@@ -110,6 +140,16 @@ class Move():
         self.start_piece = gs.board[self.start_row][self.start_column]
         self.end_piece = gs.board[self.end_row][self.end_column]
         self.record = (self.start_piece, self.start_row, self.start_column, self.end_piece, self.end_row, self.end_column)
+
+    def __eq__(self, other):
+        """ method to check whether two moves are equal """
+        if isinstance(other, Move):
+            return self.record == other.record
+        return False
+
+    def __str__(self):
+        """ what gets shown when we print the object """
+        return self.chess_notation()
 
     def chess_notation(self):
         """converts the move as python sees it to standard chess notation for log
