@@ -69,9 +69,12 @@ def main():
     screen = p.display.set_mode((WIDTH, HEIGHT))
     clock = p.time.Clock()
     gs = c.Game_State()
+    valid_moves = gs.get_legal_moves()
+    move_made = False  # Flag variable
     load_images()
     running = True
     player_clicks = []  # Places user has clicked
+
     while running:
         for e in p.event.get():
             if e.type == p.QUIT:
@@ -85,13 +88,22 @@ def main():
                 player_clicks.append((row, column))
                 if len(player_clicks) >= 2:
                     move = c.Move(player_clicks, gs)
-                    gs.make_move(move)
-                    player_clicks = []
-                    
+                    logging.debug(player_clicks)
+                    if move in valid_moves:
+                        gs.make_move(move)
+                        move_made = True
+                        player_clicks = []
+                    else:
+                        player_clicks = []
+
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z:
                     gs.undo_move()
+                    move_made = True
 
+        if move_made:
+            valid_moves = gs.get_legal_moves()
+            move_made = False
 
         clock.tick(MAX_FPS)
         p.display.flip()

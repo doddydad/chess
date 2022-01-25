@@ -50,6 +50,7 @@ changes for later, change board storage to numpy array for speed
         for r in range(len(self.board)):
             for c in range(len(self.board[r])):
                 piece = self.board[r][c]
+
                 if (piece[0] == "b" and self.white_to_move is False) or (piece[0] == "w" and self.white_to_move is True):
                     if piece[1] == "P":
                         possible_moves.append(self.get_pawn_moves(r, c, piece))
@@ -64,9 +65,11 @@ changes for later, change board storage to numpy array for speed
                     elif piece[1] == "K":
                         possible_moves.append(self.get_king_moves(r, c, piece))
 
+        return possible_moves
+
     def get_legal_moves(self):
         """ fromt he above list, filter out moves that would put you in check """
-        return self.get_all_moves
+        return self.get_all_moves()
     
     """ big set of moves here for piece specific logic"""
     def get_pawn_moves(self, r, c, piece):
@@ -90,8 +93,7 @@ changes for later, change board storage to numpy array for speed
 
 
 class Move():
-    """All things involving moving a piece, realised it will have bunch of
-    methods"""
+    """The properties of a move, so position in various expressions"""
 
     # These are just gunna be used moving things in and out fo chess notation
     ranks_to_rows = {"1": 7, "2": 6, "3": 5, "4": 4,
@@ -110,6 +112,13 @@ class Move():
         self.start_piece = gs.board[self.start_row][self.start_column]
         self.end_piece = gs.board[self.end_row][self.end_column]
         self.record = (self.start_piece, self.start_row, self.start_column, self.end_piece, self.end_row, self.end_column)
+
+    def __eq__(self, other):
+        """ method to check whether two moves are equal """
+        if isinstance(other, Move):
+            return self.record == other.record
+        return False
+                
 
     def chess_notation(self):
         """converts the move as python sees it to standard chess notation for log
