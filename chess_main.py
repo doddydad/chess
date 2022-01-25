@@ -70,6 +70,7 @@ def main():
     clock = p.time.Clock()
     gs = c.Game_State()
     valid_moves = gs.get_legal_moves()
+    logging.debug(print(x) for x in valid_moves)
     move_made = False  # Flag variable
     load_images()
     running = True
@@ -88,7 +89,6 @@ def main():
                 player_clicks.append((row, column))
                 if len(player_clicks) >= 2:
                     move = c.Move(player_clicks, gs)
-                    logging.debug(player_clicks)
                     if move in valid_moves:
                         gs.make_move(move)
                         move_made = True
@@ -103,6 +103,7 @@ def main():
 
         if move_made:
             valid_moves = gs.get_legal_moves()
+            logging.debug(valid_moves)
             move_made = False
 
         clock.tick(MAX_FPS)
