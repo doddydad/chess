@@ -86,7 +86,6 @@ def main():
                 player_clicks.append((row, column))
                 if len(player_clicks) >= 2:
                     move = m.Move(player_clicks, gs)
-                    logging.debug(move.chess_notation())
                     gs.make_move(move)
                     player_clicks = []
                     
