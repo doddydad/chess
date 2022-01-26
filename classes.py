@@ -20,7 +20,7 @@ changes for later, change board storage to numpy array for speed
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
-            ["--", "--", "--", "bQ", "--", "--", "--", "--"],
+            ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP"],
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]]
         self.white_to_move = True
@@ -100,6 +100,22 @@ changes for later, change board storage to numpy array for speed
                     pawn_moves.append(Move([(r, c), (r-1, c+1)], self))
             except IndexError:
                 pass
+        if piece[0] == "b":
+            # Moving forwards
+            if self.board[r+1][c] == "--":
+                pawn_moves.append(Move([(r, c), (r+1, c)], self))
+                if self.board[r+2][c] == "--" and r == 1:
+                    pawn_moves.append(Move([(r, c), (r+2, c)], self))
+
+            # Captures
+            try:
+                if self.board[r+1][c-1][0] == "w":
+                    pawn_moves.append(Move([(r, c), (r+1, c-1)], self))
+                if self.board[r+1][c+1][0] == "w":
+                    pawn_moves.append(Move([(r, c), (r+1, c+1)], self))
+            except IndexError:
+                pass
+        
         
         return pawn_moves
                 
