@@ -150,16 +150,26 @@ changes for later, change board storage to numpy array for speed
                 if self.board[r+(i*x[0])][c+(i*x[1])].colour != piece.colour:
                     bishop_moves.append(Move([(r, c), (r+(i*x[0]), c+(i*x[1]))], self))
                     if self.board[r+(i*x[0])][c+(i*x[1])].colour != "-":
-                        i += 100
+                        break
                     i += 1
                 else:
-                    i += 100    # Bad way to exit while loop
+                    break
 
         return bishop_moves
 
     def get_rook_moves(self, r, c, piece):
         """ If piece being tested is a rook, this returns its moves"""
         rook_moves = []
+        for x in [[1, 0], [-1, 0], [0, 1], [0, -1]]:
+            i = 1
+            while 0 <= r+(i*x[0]) < 8 and 0 <= c+(i*x[1]) < 8:
+                if self.board[r+(i*x[0])][c+(i*x[1])].colour != piece.colour:
+                    rook_moves.append(Move([(r, c), (r+(i*x[0]), c+(i*x[1]))], self))
+                    if self.board[r+(i*x[0])][c+(i*x[1])].colour != "-":
+                        break
+                    i += 1
+                else:
+                    break
         return rook_moves
 
     def get_queen_moves(self, r, c, piece):
