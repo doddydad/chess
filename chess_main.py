@@ -58,9 +58,9 @@ def draw_pieces(screen, gs):
     """Draws the pieces, image choice handled in load_images"""
     for row in range(DIMENSION):
         for column in range(DIMENSION):
-            piece = gs.board[row][column]
-            if piece != "--":  # that means empty
-                screen.blit(IMAGES[piece], p.Rect(column*SQ_SIZE,
+            image = gs.board[row][column].picture
+            if image != "--":  # that means empty
+                screen.blit(IMAGES[image], p.Rect(column*SQ_SIZE,
                             row*SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
 
