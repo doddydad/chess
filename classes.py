@@ -29,12 +29,19 @@ changes for later, change board storage to numpy array for speed
         # player list from log
         self.move_log = []  # The computer reads this for going its logic
         self.player_move_log = []   # This is what the player gets shown
+        
+        # Allows you dictionary of move types
+        self.move_types = {"P": self.get_pawn_moves, "N": self.get_knight_moves,
+                           "R": self.get_rook_moves, "B": self.get_bishop_moves,
+                           "Q": self.get_queen_moves, "K": self.get_king_moves}
+        
 
     def make_move(self, move):
         """Changing the positions on the actual board"""
         self.move_log.append(move)
         self.player_move_log.append(move.chess_notation())
         self.board[move.end_row][move.end_column] = move.start_piece
+        self.board[move.end_row][move.end_column].moved = True
         self.board[move.start_row][move.start_column] = Piece("--")
         self.white_to_move = not self.white_to_move
 
@@ -57,32 +64,17 @@ changes for later, change board storage to numpy array for speed
                 p = self.board[r][c]
 
                 if (p.colour == "b" and self.white_to_move is False) or (p.colour == "w" and self.white_to_move is True):
-                    if p.type == "P":
-                        for m in self.get_pawn_moves(r, c, p):
-                            possible_moves.append(m)
-                    elif p.type == "R":
-                        for m in self.get_rook_moves(r, c, p):
-                            possible_moves.append(m)
-                    elif p.type == "N":
-                        for m in self.get_knight_moves(r, c, p):
-                            possible_moves.append(m)
-                    elif p.type == "B":
-                        for m in self.get_bishop_moves(r, c, p):
-                            possible_moves.append(m)
-                    elif p.type == "Q":
-                        for m in self.get_queen_moves(r, c, p):
-                            possible_moves.append(m)
-                    elif p.type == "K":
-                        for m in self.get_king_moves(r, c, p):
-                            possible_moves.append(m)
+                    for m in self.move_types[p.type](r, c, p):
+                        possible_moves.append(m)
 
         return possible_moves
 
     def get_legal_moves(self):
-        """ fromt he above list, filter out moves that would put you in check """
+        """ from the above list, filter out moves that would put you in check """
         return self.get_all_moves()
-    
+
     """ big set of moves here for piece specific logic"""
+
     def get_pawn_moves(self, r, c, piece):
         """If the piece being tested is a pawn, this finds its moves"""
         pawn_moves = []
@@ -99,11 +91,10 @@ changes for later, change board storage to numpy array for speed
                     pawn_moves.append(Move([(r, c), (r-1, c-1)], self))
                 if self.board[r-1][c+1].colour == "b":
                     pawn_moves.append(Move([(r, c), (r-1, c+1)], self))
-            
+
             # For when it tests things outside the board
             except IndexError:
                 pass
-
 
         if piece.colour == "b":
             # Moving forwards
@@ -118,12 +109,11 @@ changes for later, change board storage to numpy array for speed
                     pawn_moves.append(Move([(r, c), (r+1, c-1)], self))
                 if self.board[r+1][c+1].colour == "w":
                     pawn_moves.append(Move([(r, c), (r+1, c+1)], self))
-            
+
             # For when it tests things outside the board
             except IndexError:
                 pass
-        
-        
+
         return pawn_moves
 
     def get_knight_moves(self, r, c, piece):
@@ -257,6 +247,7 @@ class Piece():
         self.type = label[1]
         self.picture = label
         self.label = label
+        self.moved = False
 
         if self.type == "Q":
             self.name = "Queen"

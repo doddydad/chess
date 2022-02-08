@@ -27,7 +27,6 @@ def load_images(set="basic"):
         IMAGES[piece] = p.transform.scale(p.image.load("Images/" + set + "/"
                         + piece + ".png"), (SQ_SIZE, SQ_SIZE))
 
-
 def draw_gamestate(screen, gs, move = []):
     """ draws everthing in modules so can switch out some stuff"""
     # Can later add parts to draw legal moves etc.
@@ -50,9 +49,20 @@ def draw_board(screen):
 def draw_highlight(screen, move):
     """Draws a square to highlight the selected square"""
     if len(move) == 1:
+        # highlights the square beneath the selected piece
         p.draw.rect(screen, p.Color("green"),
                     (move[0][1]*SQ_SIZE, move[0][0]*SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
+
+def is_selection_valid(gs, square):
+    """ Checks if the square selected contains a piece that can move """
+    r = square[0]
+    c = square[1]
+    p = gs.board[r][c]
+    if p.colour == "w" and gs.white_to_move is True or p.colour == "b" and gs.white_to_move is False:
+        if gs.move_types[p.type](r, c, p):
+            return gs.move_types[p.type](r, c, p)
+    return False
 
 def draw_pieces(screen, gs):
     """Draws the pieces, image choice handled in load_images"""
@@ -86,7 +96,10 @@ def main():
                 location = p.mouse.get_pos()  # gets (x,y) of mouse
                 column = location[0]//SQ_SIZE
                 row = location[1]//SQ_SIZE
-                player_clicks.append((row, column))
+                # Checks the first click is in a valid place
+                if is_selection_valid(gs, (row, column)) or len(player_clicks) == 1:
+                    player_clicks.append((row, column))
+                # On the second click makes the move
                 if len(player_clicks) >= 2:
                     move = c.Move(player_clicks, gs)
                     if move in valid_moves:
