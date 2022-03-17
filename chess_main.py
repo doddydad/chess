@@ -60,9 +60,7 @@ def draw_highlight(screen, move, gs):
                     (c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
         # highlights possible squares to go to
-        logging.debug(f"potential moves of {piece} are :")
         for m in piece.move(r, c, gs):
-            logging.debug(f"{m}")
             m_c = m.end_column
             m_r = m.end_row
             p.draw.circle(screen, p.Color("yellow"),
@@ -114,8 +112,8 @@ def main():
             # Getting input as regards moving pieces
             elif e.type == p.MOUSEBUTTONDOWN:
                 location = p.mouse.get_pos()  # gets (x,y) of mouse
-                column = location[0]//SQ_SIZE
                 row = location[1]//SQ_SIZE
+                column = location[0]//SQ_SIZE
                 # Checks the first click is in a valid place
                 if is_selection_valid(gs, (row, column)) or len(player_clicks) == 1:
                     player_clicks.append((row, column))
@@ -130,7 +128,8 @@ def main():
                         for m in gs.get_legal_moves():
                             logging.debug(f"{m}")
                     else:
-                        player_clicks = []
+                        if is_selection_valid(gs, (row, column)):
+                            player_clicks = [(row, column)]
 
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z:
