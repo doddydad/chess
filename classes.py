@@ -42,13 +42,14 @@ changes for later, change board storage to numpy array for speed
         self.white_to_move = not self.white_to_move
 
     def undo_move(self):
-        """ Undoes the mos recent game move"""
+        """ Undoes the most recent game move"""
         # Getting the last move and removing it from the records
         if self.move_log:
             last_move = self.move_log.pop()
             self.player_move_log = self.player_move_log[:-1]
             # Undoing the move
             self.board[last_move.start_row][last_move.start_column] = last_move.start_piece
+            self.board[last_move.start_row][last_move.start_column].moved = last_move.start_moved
             self.board[last_move.end_row][last_move.end_column] = last_move.end_piece
             self.white_to_move = not self.white_to_move
 
@@ -68,7 +69,21 @@ changes for later, change board storage to numpy array for speed
 
     def get_legal_moves(self):
         """ from the above list, filter out moves that would put you in check """
-        return self.get_all_moves()
+        legal_moves = []
+        for m in self.get_all_moves():
+            legal = True
+            self.make_move(m)
+            potential_moves = self.get_all_moves()
+            for m_2 in potential_moves:
+                if m_2.end_piece.type == "King":
+                    legal = False
+            if legal:
+                legal_moves.append(m)
+            self.undo_move()
+        return legal_moves
+
+    # goals, simulate the move, get list of valid moves, if any are king captures
+    # remove that move from the list
 
     """ big set of moves here for piece specific logic"""
 
@@ -92,7 +107,10 @@ class Move():
         self.end_column = move[1][1]
         self.start_piece = gs.board[self.start_row][self.start_column]
         self.end_piece = gs.board[self.end_row][self.end_column]
-        self.record = (self.start_piece, self.start_row, self.start_column, self.end_piece, self.end_row, self.end_column)
+        self.start_moved = self.start_piece.moved
+        self.record = (self.start_row, self.start_column, self.end_row,
+                       self.end_column, self.start_piece, self.end_piece,
+                       self.start_moved)
 
     def __eq__(self, other):
         """ method to check whether two moves are equal """
@@ -105,13 +123,13 @@ class Move():
         return self.chess_notation()
 
     def chess_notation(self):
-        """converts the move as python sees it to standard chess notation for log
-        can't do castling, promotion, or check atm"""
+        """converts the move as python sees it to standard chess notation for
+        log can't do castling, promotion, or check atm"""
         notation = ""
-        if "P" != self.start_piece.type:
+        if "P" != self.start_piece.type[0]:
             notation += self.start_piece.type
-        # Below line should only be used when there's ambiguity about what piece
-        # could have moved. That's hard to detect atm
+        # Below line should only be used when there's ambiguity about what
+        # piece could have moved. That's hard to detect atm
         # notation += self.get_rank_file(self.start_row, self.start_column)
         if self.end_piece.colour != "-":
             notation += "x"
@@ -163,30 +181,10 @@ class Queen(Piece):
     def move(self, r, c, gs):
         """Creates moves for a queen"""
         moves = []
-        if self.colour == "b" and gs.white_to_move == True or self.colour == "w" and gs.white_to_move == False:
-            return moves
-
-        for x in [[1, 0], [-1, 0], [0, 1], [0, -1]]:
-            i = 1
-            while 0 <= r+(i*x[0]) < 8 and 0 <= c+(i*x[1]) < 8:
-                if gs.board[r+(i*x[0])][c+(i*x[1])].colour != self.colour:
-                    moves.append(Move([(r, c), (r+(i*x[0]), c+(i*x[1]))], gs))
-                    if gs.board[r+(i*x[0])][c+(i*x[1])].colour != "-":
-                        break
-                    i += 1
-                else:
-                    break
-
-        for x in [[1, 1], [1, -1], [-1, -1], [-1, 1]]:
-            i = 1
-            while 0 <= r+(i*x[0]) < 8 and 0 <= c+(i*x[1]) < 8:
-                if gs.board[r+(i*x[0])][c+(i*x[1])].colour != self.colour:
-                    moves.append(Move([(r, c), (r+(i*x[0]), c+(i*x[1]))], gs))
-                    if gs.board[r+(i*x[0])][c+(i*x[1])].colour != "-":
-                        break
-                    i += 1
-                else:
-                    break
+        for m in Rook.move(self, r, c, gs):
+            moves.append(m)
+        for m in Bishop.move(self, r, c, gs):
+            moves.append(m)
 
         return moves
 
@@ -204,15 +202,17 @@ class Rook(Piece):
     def move(self, r, c, gs):
         """ creates the possible moves for the rook"""
         moves = []
-        if self.colour == "b" and gs.white_to_move == True or self.colour == "w" and gs.white_to_move == False:
+        if self.colour == "b" and gs.white_to_move or self.colour == "w" and not gs.white_to_move:
             return moves
 
         for x in [[1, 0], [-1, 0], [0, 1], [0, -1]]:
             i = 1
             while 0 <= r+(i*x[0]) < 8 and 0 <= c+(i*x[1]) < 8:
-                if gs.board[r+(i*x[0])][c+(i*x[1])].colour != self.colour:
-                    moves.append(Move([(r, c), (r+(i*x[0]), c+(i*x[1]))], gs))
-                    if gs.board[r+(i*x[0])][c+(i*x[1])].colour != "-":
+                end_row = r+(i*x[0])
+                end_col = c+(i*x[1])
+                if gs.board[end_row][end_col].colour != self.colour:
+                    moves.append(Move([(r, c), (end_row, end_col)], gs))
+                    if gs.board[end_row][end_col].colour != "-":
                         break
                     i += 1
                 else:
@@ -225,7 +225,7 @@ class Knight(Piece):
 
     def __init__(self, colour):
         super().__init__(self)
-        self.type = "Knight"
+        self.type = "Night"
         self.picture = colour + "N"
         self.colour = colour
         self.value = 3
@@ -234,14 +234,16 @@ class Knight(Piece):
         """ If piece being tested is a knight, this returns its moves"""
         # Should be complete
         moves = []
-        if self.colour == "b" and gs.white_to_move == True or self.colour == "w" and gs.white_to_move == False:
+        if self.colour == "b" and gs.white_to_move or self.colour == "w" and not gs.white_to_move:
             return moves
 
         for x in [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2],
                   [-1, 2], [-1, -2]]:
-            if 0 <= (r+x[0]) < 8 and 0 <= (c+x[1]) < 8:
-                if gs.board[r+x[0]][c+x[1]].colour != self.colour:
-                    moves.append(Move([(r, c), (r+x[0], c+x[1])], gs))
+            end_row = r+x[0]
+            end_col = c+x[1]
+            if 0 <= end_row < 8 and 0 <= end_col < 8:
+                if gs.board[end_row][end_col].colour != self.colour:
+                    moves.append(Move([(r, c), (end_row, end_col)], gs))
 
         return moves
 
@@ -259,15 +261,17 @@ class Bishop(Piece):
     def move(self, r, c, gs):
         """ If piece being tested is a bishop, this returns its moves"""
         moves = []
-        if self.colour == "b" and gs.white_to_move == True or self.colour == "w" and gs.white_to_move == False:
+        if self.colour == "b" and gs.white_to_move or self.colour == "w" and not gs.white_to_move:
             return moves
 
         for x in [[1, 1], [1, -1], [-1, -1], [-1, 1]]:
             i = 1
             while 0 <= r+(i*x[0]) < 8 and 0 <= c+(i*x[1]) < 8:
-                if gs.board[r+(i*x[0])][c+(i*x[1])].colour != self.colour:
-                    moves.append(Move([(r, c), (r+(i*x[0]), c+(i*x[1]))], gs))
-                    if gs.board[r+(i*x[0])][c+(i*x[1])].colour != "-":
+                end_row = r+(i*x[0])
+                end_col = c+(i*x[1])
+                if gs.board[end_row][end_col].colour != self.colour:
+                    moves.append(Move([(r, c), (end_row, end_col)], gs))
+                    if gs.board[end_row][end_col].colour != "-":
                         break
                     i += 1
                 else:
@@ -289,7 +293,7 @@ class Pawn(Piece):
     def move(self, r, c, gs):
         """If the piece being tested is a pawn, this finds its moves"""
         moves = []
-        if self.colour == "b" and gs.white_to_move == True or self.colour == "w" and gs.white_to_move == False:
+        if self.colour == "b" and gs.white_to_move or self.colour == "w" and not gs.white_to_move:
             return moves
 
         if self.colour == "w":
@@ -325,6 +329,8 @@ class Pawn(Piece):
 
         return moves
 
+    def promote(self, r, c, gs):
+        pass
 
 class King(Piece):
     """ Specifics for the king"""
@@ -338,7 +344,7 @@ class King(Piece):
 
     def move(self, r, c, gs):
         moves = []
-        if self.colour == "b" and gs.white_to_move == True or self.colour == "w" and gs.white_to_move == False:
+        if self.colour == "b" and gs.white_to_move or self.colour == "w" and not gs.white_to_move:
             return moves
 
         for x in [[1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0],
