@@ -1,6 +1,6 @@
 """ Will stare all classes relevant to basic playing functionality
- to import to the main section. More and more feel I need to make a
-piece object """
+ to import to the main section. I cna see how you could make piece types
+each a separate class inheriting from piece but I felt this was tidier """
 
 
 class Game_State():
@@ -13,28 +13,24 @@ changes for later, change board storage to numpy array for speed
 # Currently can't do castling, promotion or en passant
 
     def __init__(self):
-        # Board is 8x8 list, each element having 2 characters,[colour, piece]
+        # Board is 8x8 list, each being an object with a colour value given
         self.board = [
-            [Piece("bR"), Piece("bN"), Piece("bB"), Piece("bQ"), Piece("bK"), Piece("bB"), Piece("bN"), Piece("bR")],
-            [Piece("bP"), Piece("bP"), Piece("bP"), Piece("bP"), Piece("bP"), Piece("bP"), Piece("bP"), Piece("bP")],
-            [Piece("--"), Piece("--"), Piece("--"), Piece("--"), Piece("--"), Piece("--"), Piece("--"), Piece("--")],
-            [Piece("--"), Piece("--"), Piece("--"), Piece("--"), Piece("--"), Piece("--"), Piece("--"), Piece("--")],
-            [Piece("--"), Piece("--"), Piece("--"), Piece("--"), Piece("--"), Piece("--"), Piece("--"), Piece("--")],
-            [Piece("--"), Piece("--"), Piece("--"), Piece("--"), Piece("--"), Piece("--"), Piece("--"), Piece("--")],
-            [Piece("wP"), Piece("wP"), Piece("wP"), Piece("wP"), Piece("wP"), Piece("wP"), Piece("wP"), Piece("wP")],
-            [Piece("wR"), Piece("wN"), Piece("wB"), Piece("wQ"), Piece("wK"), Piece("wB"), Piece("wN"), Piece("wR")]]
+            [Rook("b"), Knight("b"), Bishop("b"), Queen("b"), King("b"), Bishop("b"), Knight("b"), Rook("b")],
+            [Pawn("b"), Pawn("b"), Pawn("b"), Pawn("b"), Pawn("b"), Pawn("b"), Pawn("b"), Pawn("b")],
+            [Piece("-"), Piece("-"), Piece("-"), Piece("-"), Piece("-"), Piece("-"), Piece("-"), Piece("-")],
+            [Piece("-"), Piece("-"), Piece("-"), Piece("-"), Piece("-"), Piece("-"), Piece("-"), Piece("-")],
+            [Piece("-"), Piece("-"), Piece("-"), Piece("-"), Piece("-"), Piece("-"), Piece("-"), Piece("-")],
+            [Piece("-"), Piece("-"), Piece("-"), Piece("-"), Piece("-"), Piece("-"), Piece("-"), Piece("-")],
+            [Pawn("w"), Pawn("w"), Pawn("w"), Pawn("w"), Pawn("w"), Pawn("w"), Pawn("w"), Pawn("w")],
+            [Rook("w"), Knight("w"), Bishop("w"), Queen("w"), King("w"), Bishop("w"), Knight("w"), Rook("w")]]
         self.white_to_move = True
 
         # Eventually should make this only one list and have them derive
         # player list from log
         self.move_log = []  # The computer reads this for going its logic
         self.player_move_log = []   # This is what the player gets shown
-        
+
         # Allows you dictionary of move types
-        self.move_types = {"P": self.get_pawn_moves, "N": self.get_knight_moves,
-                           "R": self.get_rook_moves, "B": self.get_bishop_moves,
-                           "Q": self.get_queen_moves, "K": self.get_king_moves}
-        
 
     def make_move(self, move):
         """Changing the positions on the actual board"""
@@ -42,7 +38,7 @@ changes for later, change board storage to numpy array for speed
         self.player_move_log.append(move.chess_notation())
         self.board[move.end_row][move.end_column] = move.start_piece
         self.board[move.end_row][move.end_column].moved = True
-        self.board[move.start_row][move.start_column] = Piece("--")
+        self.board[move.start_row][move.start_column] = Piece("-")
         self.white_to_move = not self.white_to_move
 
     def undo_move(self):
@@ -62,10 +58,11 @@ changes for later, change board storage to numpy array for speed
         for r in range(len(self.board)):
             for c in range(len(self.board[r])):
                 p = self.board[r][c]
-
-                if (p.colour == "b" and self.white_to_move is False) or (p.colour == "w" and self.white_to_move is True):
-                    for m in self.move_types[p.type](r, c, p):
+                try:
+                    for m in p.move(r, c, self):
                         possible_moves.append(m)
+                except TypeError:
+                    pass
 
         return possible_moves
 
@@ -74,117 +71,6 @@ changes for later, change board storage to numpy array for speed
         return self.get_all_moves()
 
     """ big set of moves here for piece specific logic"""
-
-    def get_pawn_moves(self, r, c, piece):
-        """If the piece being tested is a pawn, this finds its moves"""
-        pawn_moves = []
-        if piece.colour == "w":
-            # Moving forwards
-            if self.board[r-1][c].label == "--":
-                pawn_moves.append(Move([(r, c), (r-1, c)], self))
-                if self.board[r-2][c].label == "--" and r == 6:
-                    pawn_moves.append(Move([(r, c), (r-2, c)], self))
-
-            # Captures
-            try:
-                if self.board[r-1][c-1].colour == "b":
-                    pawn_moves.append(Move([(r, c), (r-1, c-1)], self))
-                if self.board[r-1][c+1].colour == "b":
-                    pawn_moves.append(Move([(r, c), (r-1, c+1)], self))
-
-            # For when it tests things outside the board
-            except IndexError:
-                pass
-
-        if piece.colour == "b":
-            # Moving forwards
-            if self.board[r+1][c].label == "--":
-                pawn_moves.append(Move([(r, c), (r+1, c)], self))
-                if self.board[r+2][c].label == "--" and r == 1:
-                    pawn_moves.append(Move([(r, c), (r+2, c)], self))
-
-            # Captures
-            try:
-                if self.board[r+1][c-1].colour == "w":
-                    pawn_moves.append(Move([(r, c), (r+1, c-1)], self))
-                if self.board[r+1][c+1].colour == "w":
-                    pawn_moves.append(Move([(r, c), (r+1, c+1)], self))
-
-            # For when it tests things outside the board
-            except IndexError:
-                pass
-
-        return pawn_moves
-
-    def get_knight_moves(self, r, c, piece):
-        """ If piece being tested is a knight, this returns its moves"""
-        # Should be complete
-        knight_moves = []
-
-        for x in [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2],
-                  [-1, 2], [-1, -2]]:
-            try:
-                if self.board[r+x[0]][c+x[1]].colour != piece.colour:
-                    knight_moves.append(Move([(r, c), (r+x[0], c+x[1])], self))
-            except IndexError:
-                pass
-
-        return knight_moves
-
-    def get_bishop_moves(self, r, c, piece):
-        """ If piece being tested is a bishop, this returns its moves"""
-        bishop_moves = []
-        for x in [[1, 1], [1, -1], [-1, -1], [-1, 1]]:
-            i = 1
-            while 0 <= r+(i*x[0]) < 8 and 0 <= c+(i*x[1]) < 8:
-                if self.board[r+(i*x[0])][c+(i*x[1])].colour != piece.colour:
-                    bishop_moves.append(Move([(r, c), (r+(i*x[0]), c+(i*x[1]))], self))
-                    if self.board[r+(i*x[0])][c+(i*x[1])].colour != "-":
-                        break
-                    i += 1
-                else:
-                    break
-
-        return bishop_moves
-
-    def get_rook_moves(self, r, c, piece):
-        """ If piece being tested is a rook, this returns its moves"""
-        rook_moves = []
-        for x in [[1, 0], [-1, 0], [0, 1], [0, -1]]:
-            i = 1
-            while 0 <= r+(i*x[0]) < 8 and 0 <= c+(i*x[1]) < 8:
-                if self.board[r+(i*x[0])][c+(i*x[1])].colour != piece.colour:
-                    rook_moves.append(Move([(r, c), (r+(i*x[0]), c+(i*x[1]))], self))
-                    if self.board[r+(i*x[0])][c+(i*x[1])].colour != "-":
-                        break
-                    i += 1
-                else:
-                    break
-        return rook_moves
-
-    def get_queen_moves(self, r, c, piece):
-        """ If piece being tested is a queen, this returns its moves"""
-        queen_moves = []
-        for item in self.get_bishop_moves(r, c, piece):
-            queen_moves.append(item)
-        for item in self.get_rook_moves(r, c, piece):
-            queen_moves.append(item)
-
-        return queen_moves
-
-    def get_king_moves(self, r, c, piece):
-        """ If piece being tested is a king, this returns its moves"""
-        # Very incomplete, needs castling and not being allowed into check
-        king_moves = []
-
-        for x in [[1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0],
-                  [-1, 1], [0, 1]]:
-            try:
-                if self.board[r+x[0]][c+x[1]].colour != piece.colour:
-                    king_moves.append(Move([(r, c), (r+x[0], c+x[1])], self))
-            except IndexError:
-                pass
-        return king_moves
 
 
 class Move():
@@ -227,7 +113,7 @@ class Move():
         # Below line should only be used when there's ambiguity about what piece
         # could have moved. That's hard to detect atm
         # notation += self.get_rank_file(self.start_row, self.start_column)
-        if self.end_piece.label != "--":
+        if self.end_piece.colour != "-":
             notation += "x"
         notation += self.get_rank_file(self.end_row, self.end_column)
         return notation
@@ -242,40 +128,223 @@ class Piece():
     """ Contains the attributes of a piece, position though will be saved in
     gamestate """
 
-    def __init__(self, label):
-        self.colour = label[0]
-        self.type = label[1]
-        self.picture = label
-        self.label = label
+    def __init__(self, colour):
+        self.colour = colour
+        self.type = ""
+        self.picture = "--"
         self.moved = False
 
-        if self.type == "Q":
-            self.name = "Queen"
-            self.value = 9
-        elif self.type == "R":
-            self.name = "Rook"
-            self.value = 5
-        elif self.type == "B":
-            self.name = "Bishop"
-            self.value = 3
-        elif self.type == "N":
-            self.name = "Knight"
-            self.value = 3
-        elif self.type == "P":
-            self.name = "Pawn"
-            self.value = 1
-        # Not sure if I'll need to end up deleting this line
-        elif self.type == "K":
-            self.name = "King"
-            self.value = 99999
-
     def __str__(self):
-        try:
-            return self.colour + " " + self.name.lower()
-        except AttributeError:
-            return "No piece"
+        return self.picture
 
     def __eq__(self, other):
         if isinstance(other, Piece):
-            return self.label == other.label
+            return self.picture == other.picture
         return False
+
+    def move(self, r, c, gs):
+        return []
+
+
+""" All pieces inherit from strings with just some logic to find moves and
+assign names and values """
+
+
+class Queen(Piece):
+    """ Specifics for the queen"""
+
+    def __init__(self, colour):
+        super().__init__(self)
+        self.type = "Queen"
+        self.picture = colour + "Q"
+        self.colour = colour
+        self.value = 9
+
+    def move(self, r, c, gs):
+        """Creates moves for a queen"""
+        moves = []
+        if self.colour == "b" and gs.white_to_move == True or self.colour == "w" and gs.white_to_move == False:
+            return moves
+
+        for x in [[1, 0], [-1, 0], [0, 1], [0, -1]]:
+            i = 1
+            while 0 <= r+(i*x[0]) < 8 and 0 <= c+(i*x[1]) < 8:
+                if gs.board[r+(i*x[0])][c+(i*x[1])].colour != self.colour:
+                    moves.append(Move([(r, c), (r+(i*x[0]), c+(i*x[1]))], gs))
+                    if gs.board[r+(i*x[0])][c+(i*x[1])].colour != "-":
+                        break
+                    i += 1
+                else:
+                    break
+
+        for x in [[1, 1], [1, -1], [-1, -1], [-1, 1]]:
+            i = 1
+            while 0 <= r+(i*x[0]) < 8 and 0 <= c+(i*x[1]) < 8:
+                if gs.board[r+(i*x[0])][c+(i*x[1])].colour != self.colour:
+                    moves.append(Move([(r, c), (r+(i*x[0]), c+(i*x[1]))], gs))
+                    if gs.board[r+(i*x[0])][c+(i*x[1])].colour != "-":
+                        break
+                    i += 1
+                else:
+                    break
+
+        return moves
+
+
+class Rook(Piece):
+    """ Specifics for the queen"""
+
+    def __init__(self, colour):
+        super().__init__(self)
+        self.type = "Rook"
+        self.picture = colour + "R"
+        self.colour = colour
+        self.value = 5
+
+    def move(self, r, c, gs):
+        """ creates the possible moves for the rook"""
+        moves = []
+        if self.colour == "b" and gs.white_to_move == True or self.colour == "w" and gs.white_to_move == False:
+            return moves
+
+        for x in [[1, 0], [-1, 0], [0, 1], [0, -1]]:
+            i = 1
+            while 0 <= r+(i*x[0]) < 8 and 0 <= c+(i*x[1]) < 8:
+                if gs.board[r+(i*x[0])][c+(i*x[1])].colour != self.colour:
+                    moves.append(Move([(r, c), (r+(i*x[0]), c+(i*x[1]))], gs))
+                    if gs.board[r+(i*x[0])][c+(i*x[1])].colour != "-":
+                        break
+                    i += 1
+                else:
+                    break
+        return moves
+
+
+class Knight(Piece):
+    """ Specifics for the knight"""
+
+    def __init__(self, colour):
+        super().__init__(self)
+        self.type = "Knight"
+        self.picture = colour + "N"
+        self.colour = colour
+        self.value = 3
+
+    def move(self, r, c, gs):
+        """ If piece being tested is a knight, this returns its moves"""
+        # Should be complete
+        moves = []
+        if self.colour == "b" and gs.white_to_move == True or self.colour == "w" and gs.white_to_move == False:
+            return moves
+
+        for x in [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2],
+                  [-1, 2], [-1, -2]]:
+            if 0 <= (r+x[0]) < 8 and 0 <= (c+x[1]) < 8:
+                if gs.board[r+x[0]][c+x[1]].colour != self.colour:
+                    moves.append(Move([(r, c), (r+x[0], c+x[1])], gs))
+
+        return moves
+
+
+class Bishop(Piece):
+    """ Specifics for the bishop"""
+
+    def __init__(self, colour):
+        super().__init__(self)
+        self.type = "Bishop"
+        self.picture = colour + "B"
+        self.colour = colour
+        self.value = 3
+
+    def move(self, r, c, gs):
+        """ If piece being tested is a bishop, this returns its moves"""
+        moves = []
+        if self.colour == "b" and gs.white_to_move == True or self.colour == "w" and gs.white_to_move == False:
+            return moves
+
+        for x in [[1, 1], [1, -1], [-1, -1], [-1, 1]]:
+            i = 1
+            while 0 <= r+(i*x[0]) < 8 and 0 <= c+(i*x[1]) < 8:
+                if gs.board[r+(i*x[0])][c+(i*x[1])].colour != self.colour:
+                    moves.append(Move([(r, c), (r+(i*x[0]), c+(i*x[1]))], gs))
+                    if gs.board[r+(i*x[0])][c+(i*x[1])].colour != "-":
+                        break
+                    i += 1
+                else:
+                    break
+
+        return moves
+
+
+class Pawn(Piece):
+    """ Specifics for the queen"""
+
+    def __init__(self, colour):
+        super().__init__(self)
+        self.type = "Pawn"
+        self.picture = colour + "P"
+        self.colour = colour
+        self.value = 1
+
+    def move(self, r, c, gs):
+        """If the piece being tested is a pawn, this finds its moves"""
+        moves = []
+        if self.colour == "b" and gs.white_to_move == True or self.colour == "w" and gs.white_to_move == False:
+            return moves
+
+        if self.colour == "w":
+            # Moving forwards
+            if gs.board[r-1][c].colour == "-":
+                moves.append(Move([(r, c), (r-1, c)], gs))
+                if gs.board[r-2][c].colour == "-" and r == 6:
+                    moves.append(Move([(r, c), (r-2, c)], gs))
+
+            # Captures
+            if c - 1 >= 0:
+                if gs.board[r-1][c-1].colour == "b":
+                    moves.append(Move([(r, c), (r-1, c-1)], gs))
+            if c + 1 < 8:
+                if gs.board[r-1][c+1].colour == "b":
+                    moves.append(Move([(r, c), (r-1, c+1)], gs))
+
+
+        if self.colour == "b":
+            # Moving forwards
+            if gs.board[r+1][c].colour == "-":
+                moves.append(Move([(r, c), (r+1, c)], gs))
+                if gs.board[r+2][c].colour == "-" and r == 1:
+                    moves.append(Move([(r, c), (r+2, c)], gs))
+
+            # Captures
+            if c - 1 >= 0:
+                if gs.board[r+1][c-1].colour == "w":
+                    moves.append(Move([(r, c), (r+1, c-1)], gs))
+            if c + 1 < 8:
+                if gs.board[r+1][c+1].colour == "w":
+                    moves.append(Move([(r, c), (r+1, c+1)], gs))
+
+        return moves
+
+
+class King(Piece):
+    """ Specifics for the king"""
+
+    def __init__(self, colour):
+        super().__init__(self)
+        self.type = "King"
+        self.picture = colour + "K"
+        self.colour = colour
+        self.value = 9999
+
+    def move(self, r, c, gs):
+        moves = []
+        if self.colour == "b" and gs.white_to_move == True or self.colour == "w" and gs.white_to_move == False:
+            return moves
+
+        for x in [[1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0],
+                  [-1, 1], [0, 1]]:
+            if 0 <= (r + x[0]) < 8 and 0 <= (c + x[1]) < 8:
+                if gs.board[r+x[0]][c+x[1]].colour != self.colour:
+                    moves.append(Move([(r, c), (r+x[0], c+x[1])], gs))
+
+        return moves

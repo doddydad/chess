@@ -9,6 +9,7 @@ import classes as c
 p.init()
 
 logging.basicConfig(filename="chess.log", level=logging.DEBUG)
+logging.basicConfig(format='%(message)s')
 # logging.debug(thing) to get it in the file to look at later
 
 WIDTH = HEIGHT = 512
@@ -31,7 +32,7 @@ def draw_gamestate(screen, gs, move = []):
     """ draws everthing in modules so can switch out some stuff"""
     # Can later add parts to draw legal moves etc.
     draw_board(screen)  # Draws the squares
-    draw_highlight(screen, move)  # Highlights clicked square
+    draw_highlight(screen, move, gs)  # Highlights selected piece aand its moves
     draw_pieces(screen, gs)  # draws the pieces
 
 
@@ -46,23 +47,42 @@ def draw_board(screen):
                                                      SQ_SIZE, SQ_SIZE))
 
 
-def draw_highlight(screen, move):
+def draw_highlight(screen, move, gs):
     """Draws a square to highlight the selected square"""
+    # Broken atm
     if len(move) == 1:
+        r = move[0][0]
+        c = move[0][1]
+        piece = gs.board[r][c]
+
         # highlights the square beneath the selected piece
         p.draw.rect(screen, p.Color("green"),
-                    (move[0][1]*SQ_SIZE, move[0][0]*SQ_SIZE, SQ_SIZE, SQ_SIZE))
+                    (c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
+
+        # highlights possible squares to go to
+        logging.debug(f"potential moves of {piece} are :")
+        for m in piece.move(r, c, gs):
+            logging.debug(f"{m}")
+            m_c = m.end_column
+            m_r = m.end_row
+            p.draw.circle(screen, p.Color("yellow"),
+                    ((m_c*SQ_SIZE) + SQ_SIZE//2, (m_r*SQ_SIZE) + SQ_SIZE//2),
+                    SQ_SIZE//2)
 
 
 def is_selection_valid(gs, square):
     """ Checks if the square selected contains a piece that can move """
     r = square[0]
     c = square[1]
-    p = gs.board[r][c]
-    if p.colour == "w" and gs.white_to_move is True or p.colour == "b" and gs.white_to_move is False:
-        if gs.move_types[p.type](r, c, p):
-            return gs.move_types[p.type](r, c, p)
+    piece = gs.board[r][c]
+    # logging.debug(f"Is_selection_valid called on {r} {c} {piece}")
+    # logging.debug(f"piece colour is {piece.colour} and gs.white_to_move is {gs.white_to_move}")
+    if piece.colour == "w" and gs.white_to_move is True or piece.colour == "b" and gs.white_to_move is False:
+        # logging.debug(f"first test succeeded on {r} {c} {piece}")
+        if piece.move(r, c, gs):
+            return piece.move(r, c, gs)
     return False
+
 
 def draw_pieces(screen, gs):
     """Draws the pieces, image choice handled in load_images"""
@@ -80,7 +100,7 @@ def main():
     clock = p.time.Clock()
     gs = c.Game_State()
     valid_moves = gs.get_legal_moves()
-    logging.debug(print(x) for x in valid_moves)
+    # logging.debug(f"the valid moves are{gs.get_legal_moves()}")
     move_made = False  # Flag variable
     load_images()
     running = True
@@ -106,6 +126,9 @@ def main():
                         gs.make_move(move)
                         move_made = True
                         player_clicks = []
+                        logging.debug(f"The move made was {move} and the next possible ones are")
+                        for m in gs.get_legal_moves():
+                            logging.debug(f"{m}")
                     else:
                         player_clicks = []
 
@@ -116,7 +139,6 @@ def main():
 
         if move_made:
             valid_moves = gs.get_legal_moves()
-            logging.debug(valid_moves)
             move_made = False
 
         clock.tick(MAX_FPS)
