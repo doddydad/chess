@@ -60,12 +60,13 @@ def draw_highlight(screen, move, gs):
                     (c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
         # highlights possible squares to go to
-        for m in piece.move(r, c, gs):
-            m_c = m.end_column
-            m_r = m.end_row
-            p.draw.circle(screen, p.Color("yellow"),
-                    ((m_c*SQ_SIZE) + SQ_SIZE//2, (m_r*SQ_SIZE) + SQ_SIZE//2),
-                    SQ_SIZE//2)
+        for m in gs.get_legal_moves():
+            if m.start_row == r and m.start_column == c:
+                m_c = m.end_column
+                m_r = m.end_row
+                p.draw.circle(screen, p.Color("yellow"),
+                        ((m_c*SQ_SIZE) + SQ_SIZE//2, (m_r*SQ_SIZE) + SQ_SIZE//2),
+                        SQ_SIZE//2)
 
 
 def is_selection_valid(gs, square):
@@ -75,10 +76,12 @@ def is_selection_valid(gs, square):
     piece = gs.board[r][c]
     # logging.debug(f"Is_selection_valid called on {r} {c} {piece}")
     # logging.debug(f"piece colour is {piece.colour} and gs.white_to_move is {gs.white_to_move}")
-    if piece.colour == "w" and gs.white_to_move is True or piece.colour == "b" and gs.white_to_move is False:
         # logging.debug(f"first test succeeded on {r} {c} {piece}")
-        if piece.move(r, c, gs):
-            return piece.move(r, c, gs)
+
+    for m in gs.get_legal_moves():
+        if m.start_row == r and m.start_column == c:
+            return True
+
     return False
 
 
