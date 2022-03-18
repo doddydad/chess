@@ -156,6 +156,7 @@ class Piece():
         return self.picture
 
     def __eq__(self, other):
+        """checks the same type and colour of piece"""
         if isinstance(other, Piece):
             return self.picture == other.picture
         return False
